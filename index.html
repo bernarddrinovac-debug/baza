@@ -389,7 +389,7 @@
 
         // Check if already configured
         document.addEventListener('DOMContentLoaded', function() {
-            const savedSheetId = localStorage.getItem('sheetId');
+            const savedSheetId = localStorage.getItem('sheetId') || '1s9kYVaRskj32MUG5bQ6iUst4xUXJfLu0WvU0aY350b8';
             if (savedSheetId) {
                 sheetId = savedSheetId;
                 document.getElementById('setup-content').classList.add('hidden');
