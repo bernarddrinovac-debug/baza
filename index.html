@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dijeljenja Baza Troškovnika - Cloud</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4472C4 0%, #2c5aa0 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header .badge {
+            display: inline-block;
+            background: #28a745;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            margin-left: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .setup-section {
+            padding: 40px;
+            background: #f8f9fa;
+            border-left: 4px solid #4472C4;
+            margin: 30px;
+            border-radius: 10px;
+        }
+
+        .setup-section h2 {
+            color: #4472C4;
+            margin-bottom: 20px;
+        }
+
+        .setup-step {
+            background: white;
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .setup-step h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .setup-step code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+            color: #d63384;
+        }
+
+        .config-input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 1em;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 6px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin: 5px;
+        }
+
+        .btn-primary {
+            background: #4472C4;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2c5aa0;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .search-filters {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin: 30px;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .filter-group label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        .filter-group input,
+        .filter-group select {
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 1em;
+        }
+
+        .results-section {
+            padding: 30px;
+        }
+
+        .results-table {
+            width: 100%;
+            max-height: 600px;
+            overflow: auto;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        th {
+            background: #4472C4;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: bold;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        td {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+            background: white;
+        }
+
+        tr:hover {
+            background: #f5f5f5;
+        }
+
+        .price-cell {
+            text-align: right;
+            font-weight: bold;
+            color: #28a745;
+        }
+
+        .status-connected {
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        .status-disconnected {
+            color: #dc3545;
+            font-weight: bold;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 8px;
+            color: white;
+            font-weight: bold;
+            z-index: 1000;
+            animation: slideIn 0.3s;
+        }
+
+        .notification.success {
+            background: #28a745;
+        }
+
+        .notification.error {
+            background: #dc3545;
+        }
+
+        .notification.info {
+            background: #17a2b8;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .info-box {
+            background: #d1ecf1;
+            border-left: 4px solid #0c5460;
+            padding: 15px;
+            margin: 20px 30px;
+            border-radius: 5px;
+        }
+
+        .warning-box {
+            background: #fff3cd;
+            border-left: 4px solid #856404;
+            padding: 15px;
+            margin: 20px 30px;
+            border-radius: 5px;
+        }
+
+        #app-content {
+            display: none;
+        }
+
+        #setup-content.hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌐 Dijeljena Baza Troškovnika <span class="badge">CLOUD</span></h1>
+            <p>Centralna baza dostupna svim kolegama u realnom vremenu</p>
+            <p style="margin-top: 10px; font-size: 0.9em;">
+                Status: <span id="connection-status" class="status-disconnected">Nije konfigurirano</span>
+            </p>
+        </div>
+
+        <!-- SETUP SECTION -->
+        <div id="setup-content">
+            <div class="setup-section">
+                <h2>🚀 Postavljanje Dijeljene Baze (Jednokratno)</h2>
+                
+                <div class="warning-box">
+                    <strong>⚠️ Važno:</strong> Ovo postavljanje je potrebno napraviti samo <strong>JEDNOM</strong>. 
+                    Nakon što postavite Google Sheet, svi kolege mogu koristiti istu bazu bez dodatnog postavljanja.
+                </div>
+
+                <div class="setup-step">
+                    <h3>📝 Korak 1: Kreirajte Google Sheet</h3>
+                    <ol style="margin-left: 20px; line-height: 1.8;">
+                        <li>Otvorite <a href="https://sheets.google.com" target="_blank">Google Sheets</a></li>
+                        <li>Kliknite <strong>"+ Blank spreadsheet"</strong></li>
+                        <li>Nazovite ga: <code>Baza_Troskkovnika_Concordia</code></li>
+                        <li>U prvom redu unesite header (ili kopirajte niže):</li>
+                    </ol>
+                    <div style="background: #f4f4f4; padding: 10px; margin: 10px 0; border-radius: 5px; font-family: monospace;">
+                        Datum unosa | Izvor | Red. broj | Opis stavke | Jed. mjere | Količina | Jedinična cijena | Ukupna cijena
+                    </div>
+                </div>
+
+                <div class="setup-step">
+                    <h3>🔓 Korak 2: Napravite Sheet javnim (View-Only za sve)</h3>
+                    <ol style="margin-left: 20px; line-height: 1.8;">
+                        <li>Kliknite <strong>"Share"</strong> (gore desno)</li>
+                        <li>Kliknite <strong>"Change to anyone with the link"</strong></li>
+                        <li>Odaberite: <strong>"Viewer"</strong> (samo pregled)</li>
+                        <li>Kliknite <strong>"Copy link"</strong></li>
+                        <li>Link će izgledati ovako:<br>
+                            <code>https://docs.google.com/spreadsheets/d/1A2B3C4D5E6F7.../edit</code>
+                        </li>
+                    </ol>
+                </div>
+
+                <div class="setup-step">
+                    <h3>🔗 Korak 3: Unesite Sheet ID</h3>
+                    <p style="margin-bottom: 10px;">Iz linka iznad, kopirajte samo <strong>ID dio</strong> (između /d/ i /edit):</p>
+                    <input type="text" 
+                           id="sheet-id-input" 
+                           class="config-input" 
+                           placeholder="Npr: 1A2B3C4D5E6F7G8H9I0J1K2L3M4N5O6P7Q8R9S0T">
+                    
+                    <button class="btn btn-success" onclick="saveSheetConfig()">
+                        ✅ Spremi i Učitaj Bazu
+                    </button>
+                </div>
+
+                <div class="info-box">
+                    <h4>💡 Kako koristiti nakon postavljanja:</h4>
+                    <ul style="margin-left: 20px; margin-top: 10px;">
+                        <li><strong>Vi (admin)</strong>: Uvozite troškovnike kroz desktop aplikaciju → Eksport u Google Sheet</li>
+                        <li><strong>Kolege</strong>: Otvaraju ovu stranicu → Automatski vide najnovije podatke</li>
+                        <li><strong>Svi</strong>: Pretražuju, filtriraju, uspoređuju cijene u realnom vremenu</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- APP CONTENT -->
+        <div id="app-content">
+            <div class="results-section">
+                <h2 style="margin-bottom: 20px;">🔍 Pretraživanje Baze</h2>
+                
+                <div class="search-filters">
+                    <div class="filter-group">
+                        <label>🔎 Pretraga:</label>
+                        <input type="text" id="search-text" placeholder="Unesite pojam..." onkeyup="filterResults()">
+                    </div>
+                    <div class="filter-group">
+                        <label>📁 Izvor:</label>
+                        <select id="filter-source" onchange="filterResults()">
+                            <option value="">Svi izvori</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>📏 Jedinica:</label>
+                        <select id="filter-unit" onchange="filterResults()">
+                            <option value="">Sve jedinice</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>💰 Cijena od (EUR):</label>
+                        <input type="number" id="filter-price-min" placeholder="0.00" onkeyup="filterResults()">
+                    </div>
+                    <div class="filter-group">
+                        <label>💰 Cijena do (EUR):</label>
+                        <input type="number" id="filter-price-max" placeholder="999999" onkeyup="filterResults()">
+                    </div>
+                </div>
+
+                <div style="margin: 20px 0;">
+                    <button class="btn btn-primary" onclick="refreshData()">🔄 Osvježi podatke</button>
+                    <button class="btn btn-success" onclick="exportToExcel()">📥 Preuzmi Excel</button>
+                </div>
+
+                <div id="results-count" style="margin: 20px 0; font-weight: bold; color: #4472C4;"></div>
+                
+                <div class="results-table">
+                    <div id="results-container"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let database = [];
+        let sheetId = '';
+
+        // Check if already configured
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedSheetId = localStorage.getItem('sheetId');
+            if (savedSheetId) {
+                sheetId = savedSheetId;
+                document.getElementById('setup-content').classList.add('hidden');
+                document.getElementById('app-content').style.display = 'block';
+                loadDataFromSheet();
+            }
+        });
+
+        function saveSheetConfig() {
+            const inputSheetId = document.getElementById('sheet-id-input').value.trim();
+            
+            if (!inputSheetId) {
+                showNotification('Molim unesite Sheet ID!', 'error');
+                return;
+            }
+
+            // Validate Sheet ID format (basic)
+            if (inputSheetId.length < 20) {
+                showNotification('Sheet ID izgleda prekratak. Provjerite jeste li kopirali točno.', 'error');
+                return;
+            }
+
+            sheetId = inputSheetId;
+            localStorage.setItem('sheetId', sheetId);
+            
+            showNotification('Konfiguracija spremljena! Učitavam podatke...', 'success');
+            
+            setTimeout(() => {
+                document.getElementById('setup-content').classList.add('hidden');
+                document.getElementById('app-content').style.display = 'block';
+                loadDataFromSheet();
+            }, 1500);
+        }
+
+        async function loadDataFromSheet() {
+            document.getElementById('connection-status').textContent = 'Učitavanje...';
+            document.getElementById('connection-status').className = 'status-disconnected';
+
+            try {
+                // Google Sheets CSV export URL
+                const csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv`;
+                
+                const response = await fetch(csvUrl);
+                
+                if (!response.ok) {
+                    throw new Error('Ne mogu pristupiti Google Sheet. Provjerite da je Sheet javan (View-Only).');
+                }
+
+                const csvText = await response.text();
+                const rows = parseCSV(csvText);
+                
+                // Skip header row
+                database = [];
+                for (let i = 1; i < rows.length; i++) {
+                    const row = rows[i];
+                    if (row.length < 7) continue;
+                    
+                    const item = {
+                        date: row[0] || '',
+                        source: row[1] || 'Nepoznat izvor',
+                        redbroj: row[2] || '',
+                        description: row[3] || '',
+                        unit: row[4] || '',
+                        quantity: parseFloat(row[5]) || 0,
+                        unitPrice: parseFloat(row[6]) || 0
+                    };
+                    
+                    if (item.description && item.unit && item.quantity && item.unitPrice) {
+                        database.push(item);
+                    }
+                }
+
+                document.getElementById('connection-status').textContent = `Povezano (${database.length} stavki)`;
+                document.getElementById('connection-status').className = 'status-connected';
+                
+                populateFilters();
+                filterResults();
+                showNotification(`Učitano ${database.length} stavki iz baze!`, 'success');
+
+            } catch (error) {
+                document.getElementById('connection-status').textContent = 'Greška: ' + error.message;
+                document.getElementById('connection-status').className = 'status-disconnected';
+                showNotification('Greška: ' + error.message, 'error');
+                console.error(error);
+            }
+        }
+
+        function parseCSV(text) {
+            const rows = [];
+            let currentRow = [];
+            let currentField = '';
+            let inQuotes = false;
+
+            for (let i = 0; i < text.length; i++) {
+                const char = text[i];
+                const nextChar = text[i + 1];
+
+                if (char === '"') {
+                    if (inQuotes && nextChar === '"') {
+                        currentField += '"';
+                        i++;
+                    } else {
+                        inQuotes = !inQuotes;
+                    }
+                } else if (char === ',' && !inQuotes) {
+                    currentRow.push(currentField);
+                    currentField = '';
+                } else if (char === '\n' && !inQuotes) {
+                    currentRow.push(currentField);
+                    rows.push(currentRow);
+                    currentRow = [];
+                    currentField = '';
+                    if (nextChar === '\r') i++;
+                } else if (char === '\r' && nextChar === '\n' && !inQuotes) {
+                    currentRow.push(currentField);
+                    rows.push(currentRow);
+                    currentRow = [];
+                    currentField = '';
+                    i++;
+                } else {
+                    currentField += char;
+                }
+            }
+
+            if (currentField || currentRow.length > 0) {
+                currentRow.push(currentField);
+                rows.push(currentRow);
+            }
+
+            return rows;
+        }
+
+        function populateFilters() {
+            const sources = [...new Set(database.map(item => item.source))].sort();
+            const units = [...new Set(database.map(item => item.unit))].sort();
+            
+            populateSelect('filter-source', sources);
+            populateSelect('filter-unit', units);
+        }
+
+        function populateSelect(selectId, options) {
+            const select = document.getElementById(selectId);
+            const currentValue = select.value;
+            select.innerHTML = select.children[0].outerHTML;
+            
+            options.forEach(option => {
+                if (option) {
+                    const opt = document.createElement('option');
+                    opt.value = option;
+                    opt.textContent = option;
+                    select.appendChild(opt);
+                }
+            });
+            
+            select.value = currentValue;
+        }
+
+        function filterResults() {
+            const searchText = document.getElementById('search-text').value.toLowerCase();
+            const filterSource = document.getElementById('filter-source').value;
+            const filterUnit = document.getElementById('filter-unit').value;
+            const filterPriceMin = parseFloat(document.getElementById('filter-price-min').value) || 0;
+            const filterPriceMax = parseFloat(document.getElementById('filter-price-max').value) || Infinity;
+
+            const filtered = database.filter(item => {
+                return (
+                    (searchText === '' || item.description.toLowerCase().includes(searchText)) &&
+                    (filterSource === '' || item.source === filterSource) &&
+                    (filterUnit === '' || item.unit === filterUnit) &&
+                    (item.unitPrice >= filterPriceMin && item.unitPrice <= filterPriceMax)
+                );
+            });
+
+            displayResults(filtered);
+        }
+
+        function displayResults(items) {
+            const container = document.getElementById('results-container');
+            const countDiv = document.getElementById('results-count');
+            
+            countDiv.textContent = `Pronađeno: ${items.length} stavki`;
+
+            if (items.length === 0) {
+                container.innerHTML = '<div style="text-align: center; padding: 40px; color: #999;">Nema rezultata</div>';
+                return;
+            }
+
+            let html = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Datum</th>
+                            <th>Izvor</th>
+                            <th>Red.br</th>
+                            <th>Opis stavke</th>
+                            <th>Jed.</th>
+                            <th>Količina</th>
+                            <th>Jedin. cijena</th>
+                            <th>Ukupno</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            items.forEach(item => {
+                const total = item.quantity * item.unitPrice;
+                html += `
+                    <tr>
+                        <td>${item.date}</td>
+                        <td>${item.source}</td>
+                        <td>${item.redbroj || '-'}</td>
+                        <td>${item.description}</td>
+                        <td>${item.unit}</td>
+                        <td>${item.quantity.toFixed(2)}</td>
+                        <td class="price-cell">${item.unitPrice.toFixed(2)} €</td>
+                        <td class="price-cell">${total.toFixed(2)} €</td>
+                    </tr>
+                `;
+            });
+
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        function refreshData() {
+            showNotification('Osvježavam podatke...', 'info');
+            loadDataFromSheet();
+        }
+
+        function exportToExcel() {
+            if (database.length === 0) {
+                showNotification('Nema podataka za export!', 'error');
+                return;
+            }
+
+            const ws_data = [
+                ['Datum unosa', 'Izvor', 'Red. broj', 'Opis stavke', 'Jed. mjere', 'Količina', 'Jedinična cijena (EUR)', 'Ukupna cijena (EUR)']
+            ];
+
+            database.forEach(item => {
+                ws_data.push([
+                    item.date,
+                    item.source,
+                    item.redbroj || '',
+                    item.description,
+                    item.unit,
+                    item.quantity,
+                    item.unitPrice,
+                    item.quantity * item.unitPrice
+                ]);
+            });
+
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(ws_data);
+            XLSX.utils.book_append_sheet(wb, ws, 'Troškovnici');
+            XLSX.writeFile(wb, `Baza_Troskkovnika_${new Date().toISOString().slice(0,10)}.xlsx`);
+            
+            showNotification('Excel preuzet!', 'success');
+        }
+
+        function showNotification(message, type) {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 4000);
+        }
+    </script>
+</body>
+</html>

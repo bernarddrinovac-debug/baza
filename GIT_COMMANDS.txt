@@ -1,0 +1,44 @@
+# BRZE GIT KOMANDE ZA UPLOAD NA GITHUB
+
+## PRVI PUT (Inicijalno postavljanje)
+
+# 1. Pozicionirajte se u folder s datotekama
+cd /put/do/baza-troskovnika
+
+# 2. Inicijalizirajte Git
+git init
+
+# 3. Dodajte sve datoteke
+git add .
+
+# 4. Prvi commit
+git commit -m "Initial commit - Baza Troškovnika v2.0"
+
+# 5. Povežite s GitHub (ZAMIJENITE vase-korisnicko-ime!)
+git remote add origin https://github.com/vase-korisnicko-ime/baza-troskovnika.git
+
+# 6. Push na GitHub
+git branch -M main
+git push -u origin main
+
+## KASNIJE (Ažuriranje)
+
+# Dodajte nove/promijenjene datoteke
+git add .
+
+# Commit s porukom
+git commit -m "Opis promjena"
+
+# Push na GitHub
+git push
+
+## BRZE KOMANDE
+
+# Status - što je promijenjeno
+git status
+
+# Vidi povijest
+git log --oneline
+
+# Povuci najnovije promjene (ako radite s više računala)
+git pull
